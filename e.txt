@@ -1,0 +1,115 @@
+from concurrent.futures import thread
+import threading
+from tensorflow.keras.models import load_model
+import Utils.logger as Logger
+import keras_image_classification as image_classification
+import cv2, os, json,string, hcaptcha, win32console, numpy as np, random, string, httpx, tensorflow as tf
+
+
+
+class Utils:
+    def getRandomText( length=5, charType="l"):
+        randomText = []
+        if charType == "l":
+            return  ''.join(random.choice(string.ascii_lowercase) for x in range(length))
+        elif charType == "u":
+            return  ''.join(random.choice(string.ascii_uppercase) for x in range(length))
+        elif charType == "n":
+            return  ''.join(random.choice(string.digits) for x in range(length))
+        elif charType == "a":
+            tempList = []
+            for i in range(length):
+                r = random.randint(1,3)
+                if r == 1:
+                    tempList.append(random.choice(string.ascii_lowercase)  )
+                elif  r ==2:
+                    tempList.append(random.choice(string.ascii_uppercase)  )
+                else:
+                    tempList.append(random.choice(string.digits)  )
+
+            return  ''.join(tempList)
+
+class Solver:
+    def SolvehCaptcha(siteurl, sitekey):
+        
+        ch = hcaptcha.Challenge(site_key=sitekey, site_url=siteurl, timeout=10)
+        if ch.token:
+            print(ch.token)
+            exit()
+        Logger.Success(ch.question["en"])
+        for tile in ch:
+            image = tile.get_image(raw=True)
+
+            try:
+                requester_question = ch.question["en"].split("Please click each image containing an ")[1]
+            except:
+                requester_question = ch.question["en"].split("Please click each image containing a ")[1]
+            
+            
+            def get_a():
+                prefix = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(16))
+                open("temp/"+prefix+".png","wb").write(image)
+                labels = image_classification.classify("temp/"+prefix+".png", results = 5,model = image_classification.DENSENET201)
+                os.remove("temp/"+prefix+".png")
+
+                airplane = ['plane','airliner','airship','warplane','space_shuttle','space_bar']
+                motorbus = ['school_bus','trolleybus','minibus']
+                motorcycle = ['motor_scooter','moped','mountain_bike','racer']
+                train = ['electric_locomotive','passenger_car','steam_locomotive']
+                boat = ['catamaran','liner','yawl','schooner']
+                truck = ['fire_engine','trolleybus','minibus','recreational_vehicle','moving_van','ambulance','tow_truck','police_van']
+                seaplane = ['airliner','wing','warplane']
+                bicycle = ['mountain_bike','bicycle-built-for-two','cycle','unicycle','bicycle','tricycle']
+                
+                for i in labels:
+                    if requester_question == "airplane":
+                        if i['label'] in airplane:
+                            return 'airplane'
+                            break
+                    elif requester_question == "motorbus":
+                        if i['label'] in motorbus:
+                            return 'motorbus'
+                            break
+                    elif requester_question == "motorcycle":
+                        if i['label'] in motorcycle:
+                            return 'motorcycle'
+                            break
+                    elif requester_question == "train":
+                        if i['label'] in train:
+                            return 'train'
+                            break
+                    elif requester_question == "boat":
+                        if i['label'] in boat:
+                            return 'boat'
+                            break
+                    elif requester_question == "truck":
+                        if i['label'] in truck:
+                            return 'truck'
+                            break
+                    elif requester_question == "seaplane":
+                        if i['label'] in seaplane:
+                            return 'seaplane'
+                            break
+                    elif requester_question == "bicycle":
+                        if i['label'] in bicycle:
+                            return 'bicycle'
+                            break 
+                return 'airplane'
+           
+           
+           
+           
+            img_type = get_a()
+           
+            if img_type in ch.question["en"]:
+                Logger.Success(f'[+] solved image correctly....')
+                ch.answer(tile)
+            else:
+                Logger.Error(f'not found.....')
+        try:
+            token = ch.submit()
+            return token
+        except hcaptcha.ChallengeError as err:
+            print(err)
+#for x in range(3):
+    #threading.Thread(target=Solver.SolvehCaptcha, args=["https://discord.com", "4c672d35-0701-42b2-88c3-78380b0db560"]).start()
