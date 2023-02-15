@@ -1,5 +1,7 @@
 <h1 align="center"> Discord-Account-Creator 2023 </h1>
 
+## Make sure to add img.rar file into the main file (it was too big so made it rar)
+
 <h2 align="center">Made By Nova & Sandwhich : gg/phts </h2>
 
 ## Information
